@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 504 504">
+	<circle fill="#1A935A" cx="252" cy="252" r="252"/>
+	<g>
+		<rect x="100" y="150" width="304" height="200" rx="20" fill="#FFFFFF"/>
+		<path d="M120 180h264v20H120zM120 220h120v20H120zM120 260h200v20H120zM120 300h180v20H120z" fill="#E6E9EE"/>
+		<rect x="260" y="220" width="104" height="40" rx="6" fill="#E47510"/>
+		<text x="270" y="246" font-size="16" font-family="Arial" fill="#FFFFFF">Book Now</text>
+	</g>
+</svg>

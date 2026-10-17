@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+
+	<!-- Background Circle -->
+	<circle cx="100" cy="100" r="100" fill="#1A935A"/>
+
+	<!-- Person Body -->
+	<circle cx="60" cy="70" r="12" fill="#FFAD60"/> <!-- Head -->
+	<rect x="50" y="82" width="20" height="30" rx="6" fill="#F9C784"/> <!-- Neck -->
+	<rect x="45" y="110" width="30" height="40" rx="8" fill="#fff"/> <!-- Body -->
+
+	<!-- Phone -->
+	<rect x="68" y="100" width="12" height="22" rx="2" fill="#333"/>
+	<circle cx="74" cy="108" r="2" fill="#1A935A"/> <!-- GPS dot -->
+
+	<!-- Bus Icon -->
+	<rect x="120" y="75" width="40" height="25" rx="4" fill="#E47510"/>
+	<circle cx="125" cy="105" r="4" fill="#fff"/>
+	<circle cx="150" cy="105" r="4" fill="#fff"/>
+	<rect x="128" y="80" width="24" height="8" fill="#fff"/>
+
+	<!-- Location Pin -->
+	<path d="M160 60 A8 8 0 1 1 144 60 Q152 76 160 60" fill="#fff"/>
+	<circle cx="152" cy="60" r="3" fill="#1A935A"/>
+
+</svg>

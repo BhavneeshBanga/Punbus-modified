@@ -1,0 +1,34 @@
+name: punbustracker
+description: "A modified Punjab Bus Tracker app with multi-bus tracking and no captchas."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_maps_flutter: ^2.5.3
+  http: ^1.1.2
+  shared_preferences: ^2.2.2
+  connectivity_plus: ^5.0.2
+  geolocator: ^10.1.0
+  flutter_svg: ^2.0.9
+  fluttertoast: ^8.2.4
+  another_flushbar: ^1.12.30
+  auto_size_text: ^3.0.0
+  share_plus: ^7.2.2
+  url_launcher: ^6.2.2
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/
