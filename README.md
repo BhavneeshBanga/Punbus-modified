@@ -120,3 +120,10 @@ punbustracker_modified/
    flutter build apk --release
    ```
    The APK will be generated at `build/app/outputs/flutter-apk/app-release.apk`.
+
+### Build APK with GitHub Actions
+
+This repository includes the workflow `.github/workflows/build_apk.yml` that builds a release APK and uploads it as an artifact.
+
+1. Open **Actions** → **Build PunBus APK** and run it with **Run workflow**.
+2. Download the artifact named **punbustracker-release-apk** from the completed run.
