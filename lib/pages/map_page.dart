@@ -197,18 +197,23 @@ class _MapPageState extends State<MapPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bus.displayTitle,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                    ),
-                    Text(
-                      bus.vehType.isNotEmpty ? 'Type: ${bus.vehType}' : 'Punjab Roadways / PunBus',
-                      style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bus.displayTitle,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                      ),
+                      Text(
+                        [
+                          if (bus.vehType.isNotEmpty) 'Type: ${bus.vehType}',
+                          if (bus.depoName.isNotEmpty) 'Depot: ${bus.depoName}',
+                        ].join(' • '),
+                        style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -242,9 +247,12 @@ class _MapPageState extends State<MapPage> {
               ],
             ),
             const Divider(height: 24),
-            _buildDetailRow(Icons.alt_route_rounded, 'Route', bus.routeName),
-            if (bus.stopName.isNotEmpty)
-              _buildDetailRow(Icons.place_rounded, 'Next Stop', bus.stopName),
+            if (bus.routeName.isNotEmpty)
+              _buildDetailRow(Icons.alt_route_rounded, 'Route', bus.routeName),
+            if (bus.currentLocation.isNotEmpty)
+              _buildDetailRow(Icons.location_on_rounded, 'Current Location', bus.currentLocation),
+            if (bus.nextStopFormatted.isNotEmpty)
+              _buildDetailRow(Icons.place_rounded, 'Next Stop', bus.nextStopFormatted),
             if (bus.arvlTm.isNotEmpty)
               _buildDetailRow(Icons.schedule_rounded, 'Arrival Time (ETA)', bus.arvlTm),
             if (bus.sTime.isNotEmpty)
