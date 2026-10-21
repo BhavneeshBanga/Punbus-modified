@@ -46,17 +46,20 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
-        manifestPlaceholders.appName = "PunBus Tracker"
+        manifestPlaceholders.appName = "Bus Tracker"
     }
 
     buildTypes {
         debug {
             // Keep the development build separate from the Play Store app.
             applicationIdSuffix ".dev"
-            manifestPlaceholders.appName = "PunBus Tracker Dev"
+            manifestPlaceholders.appName = "Bus Tracker Dev"
         }
 
         release {
+            // The locally built release APK must not replace the Play Store app.
+            applicationIdSuffix ".dev"
+            manifestPlaceholders.appName = "PunBus Tracker Dev"
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false

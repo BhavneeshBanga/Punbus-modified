@@ -1,4 +1,4 @@
-name: punbustracker
+name: bhavtracker
 description: "A modified Punjab Bus Tracker app with multi-bus tracking and no captchas."
 publish_to: "none"
 version: 1.0.0+1

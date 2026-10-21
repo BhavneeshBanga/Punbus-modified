@@ -242,7 +242,7 @@ class _NearbyBusesPageState extends State<NearbyBusesPage> {
                               Text(
                                 _isLoadingLocation
                                     ? 'Acquiring GPS location...'
-                                    : '${_nearbyBuses.length} Nearby PunBus vehicles found',
+                                    : '${_nearbyBuses.length} Nearby Bhav vehicles found',
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                               const SizedBox(height: 2),

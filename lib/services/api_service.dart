@@ -71,10 +71,40 @@ class ApiService {
 
   /// Track multiple buses at once in parallel - NO CAPTCHA
   Future<List<MarkerDetail>> trackMultipleBuses(List<String> busNumbers) async {
-    if (busNumbers.isEmpty) return [];
+    final numbers = <String>[];
+    final seen = <String>{};
+    for (final busNumber in busNumbers) {
+      final cleanNumber = busNumber.trim();
+      if (cleanNumber.isNotEmpty && seen.add(cleanNumber)) {
+        numbers.add(cleanNumber);
+      }
+    }
 
-    final futures = busNumbers.map((no) => trackBus(no));
-    final results = await Future.wait(futures);
+    if (numbers.isEmpty) return [];
+
+    // Sending every request at the same time can overwhelm the tracking API,
+    // causing otherwise valid buses to time out. Keep a small parallel pool so
+    // the search stays responsive without overloading the server.
+    const maxConcurrentRequests = 4;
+    final results = List<MarkerDetail?>.filled(numbers.length, null);
+    var nextIndex = 0;
+
+    Future<void> searchNextBus() async {
+      while (nextIndex < numbers.length) {
+        final index = nextIndex++;
+        results[index] = await trackBus(numbers[index]);
+      }
+    }
+
+    await Future.wait(
+      List.generate(
+        numbers.length < maxConcurrentRequests
+            ? numbers.length
+            : maxConcurrentRequests,
+        (_) => searchNextBus(),
+      ),
+    );
+
     // Filter out nulls (buses not found) and buses without valid GPS
     return results
         .whereType<MarkerDetail>()

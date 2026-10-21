@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  static const String appName = 'PunBus Tracker';
+  static const String appName = 'Bus Tracker';
   static const String baseUrl = 'https://punbus.itracking.in/punbusApp/tracker/';
   static const String username = 'punbus';
   static const String grievanceUrl = 'https://connect.punjab.gov.in/service/grievance/gr1';

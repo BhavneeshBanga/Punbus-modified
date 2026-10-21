@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../models/marker_detail.dart';
 import '../services/api_service.dart';
 import '../services/bus_storage.dart';
 import '../utils/constants.dart';
@@ -303,8 +302,8 @@ class _HomePageState extends State<HomePage> {
               // PunBus Header with branding
               SliverToBoxAdapter(
                 child: CurvedHeader(
-                  title: 'PunBus Tracker',
-                  subtitle: 'Punjab Roadways & PUNBUS Live Tracking',
+                  title: 'Bus Tracker',
+                  subtitle: 'Live Bus Tracking',
                   leading: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -329,27 +328,27 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   height: 180,
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.bolt_rounded, color: Colors.amberAccent, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              'Instant Multi-Bus Tracking • No Captcha',
-                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.bolt_rounded, color: Colors.amberAccent, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Instant Multi-Bus Tracking • No Captcha',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -459,16 +458,19 @@ class _HomePageState extends State<HomePage> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
                               onPressed: _isSearching ? null : _searchAllBuses,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.search_rounded, size: 22),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    '🔍 Search All Buses Simultaneously',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.3),
-                                  ),
-                                ],
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.search_rounded, size: 22),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Search All Buses Simultaneously',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
