@@ -1,0 +1,36 @@
+# Flutter and Dart build tooling
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+**/build/
+coverage/
+*.apk
+*.aab
+*.ipa
+
+# Android Studio / IntelliJ project metadata
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Android local settings and Gradle caches
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# Generated iOS Flutter build settings
+ios/Flutter/ephemeral/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/.last_build_id
+
+# Local OS files
+.DS_Store
+Thumbs.db
