@@ -16,11 +16,11 @@ void main() {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const PunBusApp());
+  runApp(const BusTrackerApp());
 }
 
-class PunBusApp extends StatelessWidget {
-  const PunBusApp({super.key});
+class BusTrackerApp extends StatelessWidget {
+  const BusTrackerApp({super.key});
 
   @override
   Widget build(BuildContext context) {

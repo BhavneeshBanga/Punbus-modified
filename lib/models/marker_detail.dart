@@ -147,7 +147,7 @@ class MarkerDetail {
   String get displayTitle {
     if (regNo.isNotEmpty) return 'Bus $regNo';
     if (number.isNotEmpty) return 'Bus #$number';
-    return 'PunBus $busId';
+    return 'Bus $busId';
   }
 
   String get speedFormatted => '${speed.toStringAsFixed(0)} km/h';

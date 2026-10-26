@@ -14,13 +14,13 @@ class AppConstants {
 }
 
 class AppColors {
-  static const Color primary = Color(0xFFF05A22); // Punbus saffron/orange
-  static const Color primaryDark = Color(0xFFC73E0E);
-  static const Color primaryLight = Color(0xFFFFE0D4);
-  static const Color accent = Color(0xFF1565C0);
+  static const Color primary = Color(0xFF1565C0); // Deep Blue
+  static const Color primaryDark = Color(0xFF003c8f);
+  static const Color primaryLight = Color(0xFFD0E4FF);
+  static const Color accent = Color(0xFF42A5F5);
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFF57F17);
-  static const Color background = Color(0xFFF8F9FA);
+  static const Color background = Color(0xFFF4F7FB);
   static const Color cardColor = Colors.white;
   static const Color textDark = Color(0xFF212121);
   static const Color textMuted = Color(0xFF757575);

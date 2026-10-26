@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,8 +33,13 @@ class _MapPageState extends State<MapPage> {
   List<MarkerDetail> _buses = [];
   Set<Marker> _markers = {};
   bool _isRefreshing = false;
-  BitmapDescriptor? _busIcon;
   MarkerDetail? _selectedBus;
+
+  // Rotated icon cache (same approach as TrackBusPage for correct bearing)
+  static const int _iconSizePx = 72;
+  static const double _iconHeadingOffsetDeg = 180.0;
+  final Map<int, BitmapDescriptor> _rotatedIconCache = {};
+  Uint8List? _busIconBytes;
 
   // Default center (Punjab - Chandigarh/Jalandhar/Ludhiana region)
   static const CameraPosition _initialCameraPosition = CameraPosition(
@@ -44,38 +52,77 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _buses = List.from(widget.initialBuses);
     _loadCustomMarker();
-    _updateMarkers();
   }
 
   Future<void> _loadCustomMarker() async {
     try {
-      final icon = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(size: Size(44, 44)),
-        'assets/icons/bus_topview48x48.png',
-      );
-      if (mounted) {
-        setState(() {
-          _busIcon = icon;
-          _updateMarkers();
-        });
-      }
+      final data = await rootBundle.load('assets/icons/bus_topview48x48.png');
+      _busIconBytes = data.buffer.asUint8List();
+      if (mounted) _updateMarkersAsync();
     } catch (_) {
-      // Fallback to default marker if asset loading fails
+      _busIconBytes = null;
+      if (mounted) _updateMarkersAsync();
     }
   }
 
-  void _updateMarkers() {
-    final markers = <Marker>{};
+  /// Returns a BitmapDescriptor for the bus icon rotated to [bearingDeg].
+  Future<BitmapDescriptor> _getRotatedIcon(double bearingDeg) async {
+    final rounded = ((bearingDeg / 5).round() * 5) % 360;
+    if (_rotatedIconCache.containsKey(rounded)) {
+      return _rotatedIconCache[rounded]!;
+    }
 
+    if (_busIconBytes == null) {
+      final icon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      _rotatedIconCache[rounded] = icon;
+      return icon;
+    }
+
+    final codec = await ui.instantiateImageCodec(
+      _busIconBytes!,
+      targetWidth: _iconSizePx,
+      targetHeight: _iconSizePx,
+    );
+    final frame = await codec.getNextFrame();
+    final srcImage = frame.image;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    // final rad = rounded * math.pi / 180.0;
+    final rad = (rounded + _iconHeadingOffsetDeg) * math.pi / 180.0;
+    final half = _iconSizePx / 2.0;
+
+    canvas.translate(half, half);
+    canvas.rotate(rad);
+    canvas.translate(-half, -half);
+    canvas.drawImage(srcImage, Offset.zero, Paint());
+
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(_iconSizePx, _iconSizePx);
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+
+    if (byteData == null) {
+      final icon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      _rotatedIconCache[rounded] = icon;
+      return icon;
+    }
+
+    final icon = BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
+    _rotatedIconCache[rounded] = icon;
+    return icon;
+  }
+
+  Future<void> _updateMarkersAsync() async {
+    final markers = <Marker>{};
     for (final bus in _buses) {
       if (!bus.hasValidLocation) continue;
-
+      final icon = await _getRotatedIcon(bus.bearing);
       markers.add(
         Marker(
           markerId: MarkerId(bus.busId.isNotEmpty ? bus.busId : bus.regNo),
           position: LatLng(bus.latitude, bus.longitude),
-          rotation: bus.bearing,
-          icon: _busIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          icon: icon,
+          anchor: const Offset(0.5, 0.5),
           infoWindow: InfoWindow(
             title: bus.displayTitle,
             snippet: '${bus.routeName} • ${bus.speedFormatted}',
@@ -88,12 +135,10 @@ class _MapPageState extends State<MapPage> {
         ),
       );
     }
-
-    setState(() {
-      _markers = markers;
-    });
-
-    _fitBounds();
+    if (mounted) {
+      setState(() => _markers = markers);
+      _fitBounds();
+    }
   }
 
   Future<void> _fitBounds() async {
@@ -152,7 +197,7 @@ class _MapPageState extends State<MapPage> {
           _isRefreshing = false;
         });
 
-        _updateMarkers();
+        await _updateMarkersAsync();
 
         Fluttertoast.showToast(
           msg: updatedBuses.isNotEmpty

@@ -157,12 +157,26 @@ class _NearbyBusesPageState extends State<NearbyBusesPage> {
     for (final bus in _nearbyBuses) {
       if (!bus.hasValidLocation) continue;
 
+      // markers.add(
+      //   Marker(
+      //     markerId: MarkerId(bus.busId.isNotEmpty ? bus.busId : bus.regNo),
+      //     position: LatLng(bus.latitude, bus.longitude),
+      //     icon: _busIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+      //     rotation: bus.bearing,
+      //     infoWindow: InfoWindow(
+      //       title: bus.displayTitle,
+      //       snippet: '${bus.routeName} • ${bus.speedFormatted}',
+      //     ),
+      //   ),
+      // );
       markers.add(
         Marker(
           markerId: MarkerId(bus.busId.isNotEmpty ? bus.busId : bus.regNo),
           position: LatLng(bus.latitude, bus.longitude),
           icon: _busIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-          rotation: bus.bearing,
+          rotation: (bus.bearing + 180) % 360,   // 180° offset
+          anchor: const Offset(0.5, 0.5),        // center se rotate ho
+          flat: true,                            // map ke saath align rahe
           infoWindow: InfoWindow(
             title: bus.displayTitle,
             snippet: '${bus.routeName} • ${bus.speedFormatted}',

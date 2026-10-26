@@ -30,7 +30,7 @@ class CurvedHeader extends StatelessWidget {
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.primaryDark, AppColors.primary, Color(0xFFFF7043)],
+                colors: [AppColors.primaryDark, AppColors.primary, Color(0xFF1976D2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bus Check</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#eef1f5;--card:#fff;--ink:#101a2e;--mut:#5a6579;--line:#d7dde6;--pri:#1746d1;--pri-ink:#fff;--warn:#c27800;--ok:#13804a;--bad:#c92a2a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1220;--card:#151c2e;--ink:#e8edf7;--mut:#93a0b8;--line:#26304a;--pri:#6c93ff;--pri-ink:#0d1220;--warn:#f4b13c;--ok:#3ccf8a;--bad:#ff7b7b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:640px;margin:0 auto;padding:16px 14px 48px}
+h1{font-size:26px;letter-spacing:-.02em;margin:6px 0 14px}
+h2{font-size:17px;margin:0 0 10px}
+nav{display:flex;gap:4px;background:var(--line);padding:4px;border-radius:12px;margin-bottom:16px}
+nav button{flex:1;border:0;background:none;color:var(--mut);font:inherit;font-weight:600;padding:9px 4px;border-radius:9px;cursor:pointer}
+nav button[aria-selected=true]{background:var(--card);color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+input[type=text],input[type=number],select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
+label.chk{display:flex;align-items:center;gap:8px;color:var(--ink);margin:10px 0}
+.row{display:flex;gap:8px}.row>*{min-width:0}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 16px;background:var(--pri);color:var(--pri-ink);cursor:pointer;white-space:nowrap}
+.btn.big{width:100%;padding:14px;font-size:17px}
+.btn.alt{background:var(--line);color:var(--ink)}
+.btn[disabled]{opacity:.55;cursor:wait}
+:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 12px;font-weight:600}
+.chip button{border:0;background:none;color:var(--mut);font-size:18px;line-height:1;cursor:pointer;padding:2px 7px}
+.muted{color:var(--mut);font-size:14px}
+.bus{display:grid;gap:4px}
+.bus .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bus .no{font-size:20px;font-weight:800}
+.tag{font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--line);color:var(--mut)}
+.tag.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.tag.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+a{color:var(--pri);font-weight:600}
+details{font-size:13px;color:var(--mut)}
+pre{white-space:pre-wrap;word-break:break-all;margin:6px 0 0;font-size:12px}
+.dist{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:4px 0}
+.dist.far{color:var(--ink)}.dist.mid{color:var(--warn)}.dist.near{color:var(--ok)}
+.track{position:relative;height:12px;background:var(--line);border-radius:99px;margin:14px 0 22px}
+.fill{height:100%;border-radius:99px;background:var(--pri);transition:width .4s}
+.mark{position:absolute;top:-4px;width:2px;height:20px;background:var(--ink);opacity:.5}
+.mark span{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--mut);white-space:nowrap}
+#toast{position:fixed;left:12px;right:12px;top:12px;max-width:616px;margin:0 auto;z-index:9;display:none;padding:14px 16px;border-radius:14px;color:#fff;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+#toast.mid{background:#b86e00}#toast.near{background:#0f7a44}
+#toast small{display:block;font-weight:500;opacity:.9}
+#toast button{position:absolute;right:8px;top:6px;border:0;background:none;color:#fff;font-size:22px;cursor:pointer}
+ul.log{list-style:none;margin:0;padding:0;font-size:14px}
+ul.log li{padding:6px 0;border-top:1px solid var(--line)}
+.map{height:320px;border-radius:12px;border:1px solid var(--line);z-index:0}
+.pin{background:var(--pri,#1746d1);color:#fff;font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);white-space:nowrap;width:auto!important;height:auto!important;transform:translate(-50%,-100%)}
+.pin.mv{background:#13804a}.pin.old{background:#c92a2a}
+.leaflet-container{font:inherit}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+</head>
+<body>
+<div id="toast" role="alert"><button aria-label="Dismiss" onclick="this.parentNode.style.display='none'">×</button><div id="tt"></div></div>
+<div class="wrap">
+<h1>Bus Check</h1>
+<nav role="tablist">
+  <button role="tab" data-tab="all" aria-selected="true">My buses</button>
+  <button role="tab" data-tab="live" aria-selected="false">Live track</button>
+  <button role="tab" data-tab="set" aria-selected="false">Settings</button>
+</nav>
+
+<section id="tab-all">
+  <div class="card">
+    <h2>Saved buses</h2>
+    <div class="row">
+      <input type="text" id="addIn" placeholder="Bus numbers, e.g. 8317, 2821" aria-label="Bus numbers to save" inputmode="numeric">
+      <button class="btn" id="addBtn">Save</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+  <button class="btn big" id="searchBtn">Search buses</button>
+  <p class="muted" id="searchMsg"></p>
+  <div class="card" id="allMapCard" hidden><h2>All buses on one map</h2><div id="allMap" class="map" style="height:380px"></div><p class="muted" style="margin:8px 0 0">Green = moving, blue = stopped, red = old data (offline). Tap a label for details. Blue dot = you.</p></div>
+  <div id="results"></div>
+</section>
+
+<section id="tab-live" hidden>
+  <div class="card">
+    <label for="liveBus" style="margin-top:0">Bus number to track</label>
+    <div class="row">
+      <input type="text" id="liveBus" list="savedList" placeholder="e.g. 8317" inputmode="numeric">
+      <datalist id="savedList"></datalist>
+      <button class="btn" id="liveBtn">Start</button>
+    </div>
+    <p class="muted" id="liveHint">Alerts fire at <b id="hFar"></b> m and <b id="hNear"></b> m. Keep this screen open while tracking.</p>
+  </div>
+  <div class="card" id="liveCard" hidden>
+    <div class="muted">Distance from you to bus <b id="lBus"></b></div>
+    <div class="dist far" id="lDist">–</div>
+    <div class="track"><div class="fill" id="lFill" style="width:0"></div><div class="mark" id="mFar"><span></span></div><div class="mark" id="mNear"><span></span></div></div>
+    <div id="lStatus"></div>
+    <div class="muted" id="lMeta"></div>
+  </div>
+  <div class="card" id="liveMapCard" hidden><h2>Map</h2><div id="liveMap" class="map"></div><p class="muted" style="margin:8px 0 0">Blue label = bus, green dot = you.</p></div>
+  <div class="card" id="logCard" hidden><h2>Alerts</h2><ul class="log" id="log"></ul></div>
+</section>
+
+<section id="tab-set" hidden>
+  <div class="card">
+    <h2>Alerts and refresh</h2>
+    <label for="far">First alert distance (metres)</label><input type="number" id="far" data-k="far" min="10">
+    <label for="near">Second alert distance (metres)</label><input type="number" id="near" data-k="near" min="5">
+    <label for="every">Live refresh every (seconds)</label><input type="number" id="every" data-k="every" min="0.5" step="0.5">
+    <label class="chk"><input type="checkbox" data-k="sound"> Play a beep with each alert</label>
+    <label class="chk"><input type="checkbox" data-k="vibe"> Vibrate with each alert</label>
+    <button class="btn alt" id="testBtn">Send test alert</button>
+  </div>
+  <div class="card">
+    <h2>Tracking service</h2>
+    <label for="api">API address</label><input type="text" id="api" data-k="api">
+    <label for="user">Username</label><input type="text" id="user" data-k="user">
+    <label for="proxy">Your own CORS proxy prefix (optional; built-in proxies are tried automatically)</label><input type="text" id="proxy" data-k="proxy" placeholder="https://your-proxy.example/?url=">
+    <p class="muted">The bus number is added to the API address as reg_no.</p>
+    <button class="btn alt" id="resetBtn">Reset settings</button>
+  </div>
+</section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const DEF={api:'https://punbus.itracking.in/punbusApp/tracker/veh-track.php',user:'punbus',proxy:'',every:1,far:150,near:100,sound:true,vibe:true};
+const get=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}};
+const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+let cfg={...DEF,...get('bc.cfg',{})};
+let buses=get('bc.buses',null)||['8317','8318','2821','2124','2125','8876','8867','3077','3380','2829','2819','2820'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['all','live','set'].forEach(t=>$('#tab-'+t).hidden=t!==b.dataset.tab);
+});
+
+/* ---------- saved buses ---------- */
+function drawBuses(){
+  put('bc.buses',buses);
+  $('#chips').innerHTML=buses.length?buses.map(b=>`<span class="chip">${esc(b)}<button aria-label="Remove ${esc(b)}" data-b="${esc(b)}">×</button></span>`).join(''):'<span class="muted">No buses saved yet. Add numbers above.</span>';
+  $('#savedList').innerHTML=buses.map(b=>`<option value="${esc(b)}">`).join('');
+}
+$('#chips').onclick=e=>{const b=e.target.dataset.b;if(b){buses=buses.filter(x=>x!==b);drawBuses()}};
+function addBuses(){
+  const n=$('#addIn').value.split(/[\s,;]+/).filter(Boolean);
+  buses=[...new Set([...buses,...n])];$('#addIn').value='';drawBuses();
+}
+$('#addBtn').onclick=addBuses;
+$('#addIn').onkeydown=e=>{if(e.key==='Enter')addBuses()};
+
+/* ---------- API ---------- */
+function find(o,d=0){
+  if(!o||typeof o!=='object'||d>5)return null;
+  const ks=Object.keys(o),la=ks.find(k=>/^lat/i.test(k)),ln=ks.find(k=>/^(lng|lon)/i.test(k));
+  if(la&&ln){const a=parseFloat(o[la]),b=parseFloat(o[ln]);if(isFinite(a)&&isFinite(b)&&(a||b))return{o,a,b}}
+  for(const k of ks){const r=find(o[k],d+1);if(r)return r}
+  return null;
+}
+const PROXIES=[u=>u,
+  u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)];
+let pIdx=Math.min(get('bc.pidx',0),PROXIES.length-1);
+/* The tracking server sends no CORS header, so browsers block direct calls.
+   Try direct first, then public proxies, and remember whichever works. */
+async function getJSON(url){
+  const list=cfg.proxy?[u=>cfg.proxy+encodeURIComponent(u)]:PROXIES;
+  const start=cfg.proxy?0:pIdx;
+  for(let n=0;n<list.length;n++){
+    const i=(start+n)%list.length,ac=new AbortController(),t=setTimeout(()=>ac.abort(),9000);
+    try{
+      const r=await fetch(list[i](url),{signal:ac.signal,cache:'no-store'});
+      const j=JSON.parse(await r.text());
+      if(!cfg.proxy&&i!==pIdx){pIdx=i;put('bc.pidx',i)}
+      return j;
+    }catch(e){}
+    finally{clearTimeout(t)}
+  }
+  throw new Error('Could not reach the tracking server (blocked by browser and all proxies failed)');
+}
+async function fetchBus(no){
+  const url=`${cfg.api}?username=${encodeURIComponent(cfg.user)}&reg_no=${encodeURIComponent(no)}`;
+  const j=await getJSON(url);
+  const v=j&&Array.isArray(j.veh_track)?j.veh_track[0]:null;
+  const f=v?{o:v,a:parseFloat(v.lat),b:parseFloat(v.lng)}:find(j);
+  if(!f||!isFinite(f.a)||!isFinite(f.b))return{none:true,msg:(j&&j.msg)||'Location not found in reply',raw:j};
+  const o=f.o;
+  return{lat:f.a,lng:f.b,place:o.current_location||'',speed:o.speed??'',time:o.last_upt||'',when:parseTime(o.last_upt),
+    route:o.route_name||'',next:/no info/i.test(o.next_stop||'')?'':(o.next_stop||''),depo:o.depo_name||'',raw:j};
+}
+/* ---------- maps ---------- */
+function mkMap(id){
+  if(!window.L){return null}
+  const m=L.map(id,{zoomControl:true}).setView([30.9,75.85],8);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m);
+  return m;
+}
+const pin=(t,c='')=>L.divIcon({className:'pin '+c,html:esc(t),iconSize:null});
+let allMap=null,allLayer=null,allMe=null;
+function openAllMap(){
+  if(!window.L)return false;
+  $('#allMapCard').hidden=false;
+  if(!allMap){allMap=mkMap('allMap');allLayer=L.layerGroup().addTo(allMap)}
+  allMap.invalidateSize();allLayer.clearLayers();
+  if(navigator.geolocation&&window.isSecureContext)navigator.geolocation.getCurrentPosition(p=>{
+    const ll=[p.coords.latitude,p.coords.longitude];
+    if(allMe)allMe.setLatLng(ll);else allMe=L.circleMarker(ll,{radius:8,color:'#fff',weight:2,fillColor:'#1746d1',fillOpacity:1}).addTo(allMap).bindTooltip('You');
+  },()=>{},{maximumAge:60000,timeout:10000});
+  return true;
+}
+function addAllPin(b,r){
+  if(!allMap||!r||r.none)return;
+  const cls=stale(r)?'old':parseFloat(r.speed)>0?'mv':'';
+  L.marker([r.lat,r.lng],{icon:pin(b,cls)}).addTo(allLayer)
+    .bindPopup(`<b>Bus ${esc(b)}</b><br>${esc(r.route)}<br>${esc(r.place)}<br>Speed ${esc(r.speed)} km/h<br>${esc(r.time)} (${esc(ago(r.when))})`);
+}
+function showAllMap(list){
+  const pts=list.filter(x=>x.r&&!x.r.none);
+  if(!allMap)return;
+  allLayer.clearLayers();pts.forEach(({b,r})=>addAllPin(b,r));
+  const ll=pts.map(x=>[x.r.lat,x.r.lng]);
+  if(allMe)ll.push(allMe.getLatLng());
+  if(ll.length)allMap.fitBounds(ll,{padding:[40,40],maxZoom:15});
+}
+let liveMap=null,liveBusM=null,liveMeM=null,liveFit=false;
+function startLiveMap(){
+  if(!window.L)return;
+  $('#liveMapCard').hidden=false;
+  if(!liveMap)liveMap=mkMap('liveMap');
+  liveMap.invalidateSize();
+  if(liveBusM){liveMap.removeLayer(liveBusM);liveBusM=null}
+  if(liveMeM){liveMap.removeLayer(liveMeM);liveMeM=null}
+  liveFit=false;
+}
+function updLive(){
+  if(!liveMap||!live)return;
+  const b=live.bus_pos,m=live.me;
+  if(b){const ll=[b.lat,b.lng];
+    if(liveBusM)liveBusM.setLatLng(ll);else liveBusM=L.marker(ll,{icon:pin(live.bus)}).addTo(liveMap)}
+  if(m){const ll=[m.lat,m.lng];
+    if(liveMeM)liveMeM.setLatLng(ll);else liveMeM=L.circleMarker(ll,{radius:8,color:'#fff',weight:2,fillColor:'#13804a',fillOpacity:1}).addTo(liveMap)}
+  const pts=[b&&[b.lat,b.lng],m&&[m.lat,m.lng]].filter(Boolean);
+  if(!pts.length)return;
+  if(!liveFit||!liveMap.getBounds().contains(pts[0])){
+    liveFit=true;
+    pts.length>1?liveMap.fitBounds(pts,{padding:[50,50],maxZoom:17}):liveMap.setView(pts[0],16);
+  }
+}
+function parseTime(s){const m=/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)/.exec(s||'');return m?new Date(+m[3],m[2]-1,+m[1],+m[4],+m[5],+m[6]):null}
+function ago(d){if(!d)return '';const s=Math.max(0,(Date.now()-d)/1000);return s<60?Math.round(s)+' s ago':s<3600?Math.round(s/60)+' min ago':s<86400?Math.round(s/3600)+' h ago':Math.round(s/86400)+' days ago'}
+const stale=r=>r.when&&Date.now()-r.when>600000;
+const maps=(a,b)=>`https://www.google.com/maps?q=${a},${b}`;
+
+function card(no,r,err){
+  let tag='',body='';
+  if(err){tag='<span class="tag bad">Error</span>';body=`<div>${esc(err)}</div>`}
+  else if(r.none){tag='<span class="tag">No record</span>';body=`<div class="muted">${esc(r.msg)}</div>`}
+  else{
+    const mv=parseFloat(r.speed)>0;
+    tag=stale(r)?'<span class="tag bad">Old data</span>':mv?'<span class="tag ok">Moving</span>':'<span class="tag">Stopped</span>';
+    body=(r.route?`<div class="muted">${esc(r.route)}</div>`:'')+
+      (r.place?`<div>${esc(r.place)}</div>`:'')+
+      (r.next?`<div class="muted">Next stop: ${esc(r.next)}</div>`:'')+
+      (r.speed!==''?`<div class="muted">Speed ${esc(r.speed)} km/h</div>`:'')+
+      (r.time?`<div class="muted">Updated ${esc(r.time)} (${ago(r.when)})</div>`:'')+
+      `<div><a href="${maps(r.lat,r.lng)}" target="_blank" rel="noopener">Open on map</a></div>`;
+  }
+  const raw=r&&r.raw?`<details><summary>Raw reply</summary><pre>${esc(JSON.stringify(r.raw,null,1))}</pre></details>`:'';
+  return `<div class="top"><span class="no">${esc(no)}</span>${tag}</div>${body}${raw}`;
+}
+
+/* ---------- search all ---------- */
+$('#searchBtn').onclick=async()=>{
+  if(!buses.length){$('#searchMsg').textContent='Save at least one bus first.';return}
+  const btn=$('#searchBtn');btn.disabled=true;btn.textContent='Searching…';
+  $('#searchMsg').textContent='';
+  const res=$('#results');res.innerHTML='';
+  const els=buses.map(b=>{const d=document.createElement('div');d.className='card bus';d.innerHTML=`<div class="top"><span class="no">${esc(b)}</span><span class="tag">Checking…</span></div>`;res.appendChild(d);return d});
+  let found=0;const got=[];openAllMap();
+  await Promise.all(buses.map(async(b,i)=>{
+    try{const r=await fetchBus(b);if(!r.none)found++;got.push({b,r});els[i].innerHTML=card(b,r);if(!r.none){addAllPin(b,r);const l=[];got.forEach(x=>{if(!x.r.none)l.push([x.r.lat,x.r.lng])});if(l.length)allMap.fitBounds(l,{padding:[40,40],maxZoom:15})}}
+    catch(e){els[i].innerHTML=card(b,null,e.message+(/fetch/i.test(e.message)?'. Try a CORS proxy in Settings.':''))}
+  }));
+  showAllMap(got);
+  $('#searchMsg').textContent=`${found} of ${buses.length} buses located at ${new Date().toLocaleTimeString()}.`;
+  btn.disabled=false;btn.textContent='Search buses';
+};
+
+/* ---------- alerts ---------- */
+let actx=null;
+function beep(n,f){
+  if(!actx)return;
+  for(let i=0;i<n;i++){const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime+i*.3;
+    o.frequency.value=f;o.connect(g);g.connect(actx.destination);
+    g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.22)}
+}
+function alertUser(title,body,level){
+  const t=$('#toast');$('#tt').innerHTML=`${esc(title)}<small>${esc(body)}</small>`;t.className=level;t.style.display='block';
+  if(cfg.sound)beep(level==='near'?3:2,level==='near'?1175:880);
+  if(cfg.vibe&&navigator.vibrate)navigator.vibrate(level==='near'?[300,100,300,100,300]:[400]);
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{new Notification(title,{body,tag:'bus-'+level,requireInteraction:true})}catch{}
+  }
+}
+$('#testBtn').onclick=()=>{
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)()}catch{}
+  if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+  alertUser('Test alert','Alerts are working on this device.','mid');
+};
+
+/* ---------- live tracking ---------- */
+let live=null,wake=null;
+const dist=(a,b,c,d)=>{const R=6371000,r=x=>x*Math.PI/180,h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+const fmt=m=>m<1000?Math.round(m)+' m':(m/1000).toFixed(2)+' km';
+function logLine(t){const li=document.createElement('li');li.textContent=new Date().toLocaleTimeString()+'  '+t;$('#log').prepend(li);$('#logCard').hidden=false}
+function marks(){
+  const sc=Math.max(1000,cfg.far*4);live&&(live.scale=sc);
+  [['#mFar',cfg.far],['#mNear',cfg.near]].forEach(([s,v])=>{const m=$(s);m.style.left=(100-v/sc*100)+'%';m.firstElementChild.textContent=v+' m'});
+  $('#hFar').textContent=cfg.far;$('#hNear').textContent=cfg.near;
+}
+async function tick(){
+  const me=live;if(!me)return;
+  let msg='';
+  try{
+    const r=await fetchBus(me.bus);if(live!==me)return;
+    if(r.none){msg='No record for this bus right now.'}
+    else{
+      me.bus_pos=r;
+      if(me.me){
+        const d=dist(me.me.lat,me.me.lng,r.lat,r.lng);
+        $('#lDist').textContent=fmt(d);
+        $('#lDist').className='dist '+(d<=cfg.near?'near':d<=cfg.far?'mid':'far');
+        $('#lFill').style.width=Math.max(2,(1-Math.min(d,me.scale)/me.scale)*100)+'%';
+        $('#lStatus').textContent=d<=cfg.near?'Your bus is here.':d<=cfg.far?'Your bus is arriving.':'On the way.';
+        if(d>cfg.far+50){me.f1=me.f2=false}
+        if(d<=cfg.near&&!me.f2){me.f1=me.f2=true;const s=`Bus ${me.bus} is within ${cfg.near} m of you.`;alertUser('Bus is here',s,'near');logLine(s)}
+        else if(d<=cfg.far&&!me.f1){me.f1=true;const s=`Bus ${me.bus} is arriving, within ${cfg.far} m.`;alertUser('Bus is arriving',s,'mid');logLine(s)}
+      }else $('#lStatus').textContent='Waiting for your location…';
+      msg=(r.route?r.route+'. ':'')+(r.place?'Bus is at '+r.place+'. ':'')+(r.speed!==''?'Speed '+r.speed+' km/h. ':'')+(r.time?'Bus data updated '+r.time+' ('+ago(r.when)+'). ':'')+(stale(r)?'This data is old, so the bus may be offline. ':'');
+    }
+  }catch(e){if(live!==me)return;msg='Could not reach the server: '+e.message}
+  updLive();
+  $('#lMeta').textContent=msg+' Checked '+new Date().toLocaleTimeString()+(me.me?'. Your GPS accuracy ±'+Math.round(me.me.acc)+' m.':'');
+  me.timer=setTimeout(tick,Math.max(500,cfg.every*1000));
+}
+async function lock(){try{wake=await navigator.wakeLock.request('screen')}catch{}}
+document.addEventListener('visibilitychange',()=>{if(live&&document.visibilityState==='visible')lock()});
+function stop(){
+  if(!live)return;clearTimeout(live.timer);
+  if(live.watch!=null)navigator.geolocation.clearWatch(live.watch);
+  live=null;if(wake){wake.release().catch(()=>{});wake=null}
+  $('#liveBtn').textContent='Start';$('#liveBtn').classList.remove('alt');
+}
+function startGPS(){
+  const L_=live;if(!L_)return;
+  if(!navigator.geolocation){$('#lStatus').textContent='This browser has no location support. The bus is still shown on the map.';return}
+  if(!window.isSecureContext){$('#lStatus').textContent='Location only works on a secure page (https://). This page is opened as '+location.protocol+'// so the browser blocks it. Host the file on https (e.g. GitHub Pages or Netlify) or open it from localhost.';return}
+  if(L_.watch!=null)navigator.geolocation.clearWatch(L_.watch);
+  let hi=true;
+  const go=()=>{
+    L_.watch=navigator.geolocation.watchPosition(p=>{
+      if(live!==L_)return;
+      L_.me={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};updLive();
+    },e=>{
+      if(live!==L_)return;
+      if(e.code===1){$('#lStatus').innerHTML='Location permission is blocked. Tap the lock/tune icon next to the address bar, set Location to Allow, also turn on the phone\'s GPS/Location, then <button class="btn alt" id="gpsRetry" style="padding:4px 10px">Try again</button>';
+        const r=$('#gpsRetry');if(r)r.onclick=()=>{$('#lStatus').textContent='Asking for location…';startGPS()}}
+      else if(hi){hi=false;navigator.geolocation.clearWatch(L_.watch);go()} /* retry with low accuracy */
+      else $('#lStatus').textContent='Could not get your location ('+(e.code===3?'timed out':'position unavailable')+'). Check that GPS is on; retrying…';
+    },{enableHighAccuracy:hi,maximumAge:5000,timeout:20000});
+  };
+  go();
+}
+$('#liveBtn').onclick=()=>{
+  if(live){stop();return}
+  const bus=$('#liveBus').value.trim();if(!bus){$('#liveBus').focus();return}
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)()}catch{}
+  if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+  live={bus,f1:false,f2:false,me:null,scale:1000,watch:null};
+  $('#liveCard').hidden=false;$('#lBus').textContent=bus;$('#lDist').textContent='–';$('#lDist').className='dist far';
+  $('#lFill').style.width='0';$('#lStatus').textContent='Starting…';$('#lMeta').textContent='';$('#log').innerHTML='';$('#logCard').hidden=true;
+  marks();startLiveMap();
+  startGPS();
+  $('#liveBtn').textContent='Stop';$('#liveBtn').classList.add('alt');
+  lock();tick();
+};
+
+/* ---------- settings ---------- */
+document.querySelectorAll('[data-k]').forEach(el=>{
+  const k=el.dataset.k;
+  if(el.type==='checkbox')el.checked=!!cfg[k];else el.value=cfg[k];
+  el.oninput=()=>{
+    cfg[k]=el.type==='checkbox'?el.checked:el.type==='number'?(parseFloat(el.value)||DEF[k]):el.value.trim();
+    put('bc.cfg',cfg);marks();
+  };
+});
+$('#resetBtn').onclick=()=>{cfg={...DEF};put('bc.cfg',cfg);location.reload()};
+
+drawBuses();marks();
+</script>
+</body>
+</html>

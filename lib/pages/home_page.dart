@@ -7,6 +7,7 @@ import '../widgets/bus_chip.dart';
 import '../widgets/curved_header.dart';
 import '../widgets/menu_card.dart';
 import 'map_page.dart';
+import 'track_bus_page.dart';
 import 'eta_page.dart';
 import 'etd_page.dart';
 import 'nearby_buses_page.dart';
@@ -117,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                 final busNum = controller.text.trim();
                 final added = await _busStorage.addBus(busNum);
                 if (added) {
-                  Navigator.pop(ctx);
+                  if (ctx.mounted) Navigator.pop(ctx);
                   _loadSavedBuses();
                   Fluttertoast.showToast(msg: 'Bus #$busNum added to tracking list');
                 } else {
@@ -136,6 +137,162 @@ class _HomePageState extends State<HomePage> {
     await _busStorage.removeBus(busNumber);
     _loadSavedBuses();
     Fluttertoast.showToast(msg: 'Bus #$busNumber removed');
+  }
+
+  Future<void> _trackSingleBusDialog() async {
+    final busController = TextEditingController();
+    final refreshController = TextEditingController(text: '2000');
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.gps_fixed_rounded, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text('Track Bus Live', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Enter bus number to track live with smooth Uber-style glide animation:',
+                      style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: busController,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      decoration: InputDecoration(
+                        labelText: 'Bus Number',
+                        hintText: 'e.g. 0544 or 2401',
+                        prefixIcon: const Icon(Icons.directions_bus_rounded, color: AppColors.primary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        counterText: '',
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) return 'Please enter a bus number';
+                        if (val.trim().length < 2) return 'Number too short';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Refresh Rate (Milliseconds):',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '1000 ms = 1 sec • 2000 ms = 2 sec',
+                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                    ),
+                    const SizedBox(height: 8),
+                    // Quick preset chips
+                    Wrap(
+                      spacing: 6,
+                      children: [1000, 2000, 3000, 5000].map((ms) {
+                        final isSel = refreshController.text == ms.toString();
+                        return ChoiceChip(
+                          label: Text('${ms}ms'),
+                          selected: isSel,
+                          selectedColor: AppColors.primary,
+                          backgroundColor: AppColors.primaryLight.withOpacity(0.3),
+                          labelStyle: TextStyle(
+                            color: isSel ? Colors.white : AppColors.primaryDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                          onSelected: (sel) {
+                            if (sel) {
+                              setDialogState(() {
+                                refreshController.text = ms.toString();
+                              });
+                            }
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: refreshController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Interval in ms',
+                        hintText: 'e.g. 2000',
+                        suffixText: 'ms',
+                        prefixIcon: const Icon(Icons.speed_rounded, color: AppColors.primary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                      validator: (val) {
+                        final parsed = int.tryParse(val?.trim() ?? '');
+                        if (parsed == null || parsed < 500 || parsed > 60000) {
+                          return 'Enter between 500 and 60000 ms';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Track Live'),
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    final busNum = busController.text.trim();
+                    final refreshMs = int.tryParse(refreshController.text.trim()) ?? 2000;
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TrackBusPage(
+                          busNumber: busNum,
+                          initialRefreshIntervalMs: refreshMs,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   /// Search single bus and navigate to map
@@ -299,7 +456,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           CustomScrollView(
             slivers: [
-              // PunBus Header with branding
+              // App Header
               SliverToBoxAdapter(
                 child: CurvedHeader(
                   title: 'Bus Tracker',
@@ -502,6 +659,14 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 8),
                       MenuCard(
+                        title: 'Track Single Bus Live',
+                        subtitle: 'Enter any bus number — see it move in real-time, every 2 seconds',
+                        iconData: Icons.gps_fixed_rounded,
+                        accentColor: Colors.blue.shade700,
+                        onTap: _trackSingleBusDialog,
+                      ),
+                      const SizedBox(height: 8),
+                      MenuCard(
                         title: 'Nearby Buses',
                         subtitle: 'Find buses around your current live location',
                         iconAsset: 'assets/icons/nearby_buss.png',
@@ -594,12 +759,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Tracking Saved Buses...',
+                          'Tracking Buses...',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Querying live server simultaneously without captcha',
+                          'Querying live server simultaneously',
                           style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                           textAlign: TextAlign.center,
                         ),
